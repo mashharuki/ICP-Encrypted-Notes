@@ -1,4 +1,0 @@
-// Sample code
-service : {
-    "greet" : (text) -> (text) query;
-};

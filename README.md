@@ -1,14 +1,19 @@
-# ICP Encrypted Notes Starter
+# ICP Encrypted Notes Dapp
 
-![](/image/bannr.png)
+### 動かし方
 
-このリポジトリはUNCHAIN ICP Encrypted Notesのスターターキットです。
+- インストール
 
-## はじめてみよう
+  ```bash
+  yarn
+  ```
 
-1. リポジトリをクローンする
-2. `npm install` を実行する
-3. `dfx start --clean --background` を実行する
-4. `npm run deploy:local`　を実行する
-5. `npm run start` を実行する
-6. コードを書きましょう！
+- Candid インタフェースを自動生成するコマンド
+
+  ```bash
+  yarn generate:did
+  ```
+
+### Candid とは
+
+Candid は、サービスのパブリック・インタフェースを記述することを主な目的としたインタフェース記述言語です。
