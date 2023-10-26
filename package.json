@@ -12,6 +12,8 @@
     "build": "webpack",
     "prebuild": "dfx generate",
     "start": "webpack serve --mode development --env development",
+    "start:local": "dfx start --clean --background",
+    "stop:local": "dfx stop",
     "deploy:local": "npm run generate:did && dfx deploy --network=local",
     "deploy:ic": "npm run generate:did && dfx deploy --network=ic",
     "generate": "npm run generate:did && dfx generate encrypted_notes_backend",

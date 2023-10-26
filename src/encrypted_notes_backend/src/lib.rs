@@ -2,7 +2,6 @@ use crate::notes::*;
 use candid::Principal;
 use ic_cdk::api::caller as caller_api;
 use ic_cdk_macros::{export_candid, query, update};
-use ic_cdk_macros::{query, update};
 use std::cell::RefCell;
 
 mod notes;

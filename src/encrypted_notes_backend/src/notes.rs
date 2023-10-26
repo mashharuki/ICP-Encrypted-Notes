@@ -21,12 +21,19 @@ pub struct Notes {
 /// 関数を実装
 impl Notes {
     /// 指定したPrincipalが持つノートを取得するメソッド
-    pub fn get_notes(&self, caller: Principal) -> Vec<EncryptedNote> {
+    pub fn get_notes(
+        &self, 
+        caller: Principal
+    ) -> Vec<EncryptedNote> {
         self.notes.get(&caller).cloned().unwrap_or_default()
     }
 
     /// 新しいノートを追加するメソッド
-    pub fn add_note(&mut self, caller: Principal, data: String) {
+    pub fn add_note(
+        &mut self, 
+        caller: Principal, 
+        data: String
+    ) {
         let notes_of_caller = self.notes.entry(caller).or_default();
 
         notes_of_caller.push(EncryptedNote {
@@ -37,14 +44,22 @@ impl Notes {
     }
 
     /// 指定したPrincipalのノートから、IDが一致するノートを削除するメソッド
-    pub fn delete_note(&mut self, caller: Principal, id: u128) {
+    pub fn delete_note(
+        &mut self, 
+        caller: Principal, 
+        id: u128
+    ) {
         if let Some(notes_of_caller) = self.notes.get_mut(&caller) {
             notes_of_caller.retain(|n| n.id != id); // 条件式がtrueのものだけ残します。
         }
     }
 
     /// 指定したPrincipalのノートから、IDが一致するノートを更新するメソッド
-    pub fn update_note(&mut self, caller: Principal, new_note: EncryptedNote) {
+    pub fn update_note(
+        &mut self, 
+        caller: Principal, 
+        new_note: EncryptedNote
+    ) {
         if let Some(current_note) = self
             .notes
             .get_mut(&caller)
