@@ -34,14 +34,21 @@ export const useAuthProvider = (): AuthState => {
     // ユーザーデータを取得する
     const identity = authClient.getIdentity();
 
-    /** STEP3: バックエンドキャニスターを呼び出す準備をします。 */
+    // 取得した`identity`を使用して、ICと対話する`agent`を作成します。
+    const newAgent = new HttpAgent({ identity });
+    if (process.env.DFX_NETWORK === 'local') {
+      newAgent.fetchRootKey();
+    }
+    // 認証したユーザーの情報で`actor`を作成します。
+    const options = { agent: newAgent };
+    const actor = createActor(canisterId, options);
 
     /** STEP5: CryptoServiceクラスのインスタンスを生成します。 */
     const cryptoService = new CryptoService();
 
     /** STEP7: デバイスデータの設定を行います。 */
 
-    setAuth({ status: 'SYNCHRONIZING' });
+    setAuth({ actor, authClient, cryptoService, status: 'SYNCED' });
   };
 
   /**

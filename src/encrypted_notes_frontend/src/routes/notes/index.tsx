@@ -13,6 +13,10 @@ import {
 import { useDeviceCheck, useMessage } from '../../hooks';
 import { useAuthContext } from '../../hooks/authContext';
 
+/**
+ * Notes Component
+ * @returns 
+ */
 export const Notes = () => {
   const {
     isOpen: isOpenDeleteDialog,
@@ -55,6 +59,10 @@ export const Notes = () => {
     onOpenDeleteDialog();
   };
 
+  /**
+   * add Note method
+   * @returns 
+   */
   const addNote = async () => {
     if (auth.status !== 'SYNCED') {
       console.error(`CryptoService is not synced.`);
@@ -65,7 +73,8 @@ export const Notes = () => {
 
     try {
       // バックエンドキャニスターにノートを追加します。
-      console.log('add note');
+      await auth.actor.addNote(currentNote.data);
+      await getNotes();
     } catch (err) {
       showMessage({
         title: 'Failed to add note',
@@ -107,7 +116,8 @@ export const Notes = () => {
 
     try {
       // バックエンドキャニスターからノート一覧を取得します。
-      setNotes([]);
+      const notes = await auth.actor.getNotes();
+      setNotes(notes);
     } catch (err) {
       showMessage({
         title: 'Failed to get notes',
