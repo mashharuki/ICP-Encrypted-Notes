@@ -96,7 +96,8 @@ export const Notes = () => {
 
     try {
       // ノートを削除します。
-      console.log('delete note');
+      await auth.actor.deleteNote(deleteId);
+      await getNotes();
     } catch (err) {
       showMessage({
         title: 'Failed to delete note',
@@ -135,8 +136,9 @@ export const Notes = () => {
     setIsLoading(true);
 
     try {
-      // バックエンドキャニスターにノートを追加します。
-      console.log('update note');
+      // バックエンドキャニスターのノートを更新します。
+      await auth.actor.updateNote(currentNote);
+      await getNotes();
     } catch (err) {
       showMessage({
         title: 'Failed to update note',
