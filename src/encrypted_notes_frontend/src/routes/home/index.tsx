@@ -3,14 +3,37 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useMessage } from '../../hooks';
+import { useAuthContext } from '../../hooks/authContext';
 
+/**
+ * Home Component
+ * @returns 
+ */
 export const Home = () => {
+  const { login } = useAuthContext();
   const navigate = useNavigate();
   const { showMessage } = useMessage();
   const [isLoading, setIsLoading] = useState(false);
 
+  /**
+   * handleLogin method
+   */
   const handleLogin = async () => {
-    console.log(`Click "Login with Internet Identity"`)
+    setIsLoading(true);
+    try {
+      await login();
+      showMessage({
+        title: 'Authentication succeeded',
+        duration: 2000,
+        status: 'success',
+      });
+      navigate('/notes');
+    } catch (err) {
+      showMessage({ title: 'Failed to authenticate', status: 'error' });
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (

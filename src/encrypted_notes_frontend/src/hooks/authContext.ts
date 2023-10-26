@@ -31,7 +31,8 @@ export const useAuthProvider = (): AuthState => {
   const [auth, setAuth] = useState<Auth>(initialize.auth);
 
   const setupService = async (authClient: AuthClient) => {
-    /** STEP2: 認証したユーザーのデータを取得します。 */
+    // ユーザーデータを取得する
+    const identity = authClient.getIdentity();
 
     /** STEP3: バックエンドキャニスターを呼び出す準備をします。 */
 
@@ -43,8 +44,34 @@ export const useAuthProvider = (): AuthState => {
     setAuth({ status: 'SYNCHRONIZING' });
   };
 
+  /**
+   * ログインメソッド
+   */
   const login = async (): Promise<void> => {
-    /** STEP1: 認証機能を実装します。 */
+    const iiUrl = `http://${process.env.INTERNET_IDENTITY_CANISTER_ID}.localhost:4943`;
+
+    return new Promise((resolve, reject) => {
+      // AuthClientオブジェクトを作成します。
+      AuthClient.create()
+        .then((authClient) => {
+          // 認証画面を開きます。
+          authClient.login({
+            identityProvider: iiUrl,
+            onSuccess: async () => {
+              try {
+                await setupService(authClient);
+                resolve();
+              } catch (err) {
+                reject(err);
+              }
+            },
+            onError: (err) => {
+              reject(err);
+            },
+          });
+        })
+        .catch(reject);
+    });
   };
 
   const logout = async (): Promise<void> => {
