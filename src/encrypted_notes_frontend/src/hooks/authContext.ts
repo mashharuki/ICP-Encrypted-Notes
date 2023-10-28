@@ -44,9 +44,12 @@ export const useAuthProvider = (): AuthState => {
     const actor = createActor(canisterId, options);
 
     /** STEP5: CryptoServiceクラスのインスタンスを生成します。 */
-    const cryptoService = new CryptoService();
+    const cryptoService = new CryptoService(actor);
 
     /** STEP7: デバイスデータの設定を行います。 */
+    const initialized = await cryptoService.init();
+    console.log(`initialized: ${initialized}`);
+
 
     setAuth({ actor, authClient, cryptoService, status: 'SYNCED' });
   };

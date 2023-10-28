@@ -56,7 +56,8 @@ export const Devices = () => {
 
     try {
       // バックエンドキャニスターからデバイスエイリアス一覧を取得します。
-      setDeviceAliases([]);
+      const deviceAliases = await auth.actor.getDeviceAliases();
+      setDeviceAliases(deviceAliases);
     } catch (err) {
       showMessage({
         title: 'Failed to get devices',
