@@ -4,6 +4,8 @@ import { clearKeys, loadKey, storeKey } from './keyStorage';
 
 import {
   _SERVICE,
+  Result_1,
+  Result,
 } from '../../../declarations/encrypted_notes_backend/encrypted_notes_backend.did';
 
 export class CryptoService {
@@ -64,9 +66,52 @@ export class CryptoService {
       this.exportedPublicKeyBase64,
     );
 
-    /** STEP9: 対称鍵を生成します。 */
+    // 対称鍵が生成されているかどうかを確認します。
+    const isSymKeyRegistered = await this.actor.isEncryptedSymmetricKeyRegistered();
+    if (!isSymKeyRegistered) {
+      console.log('Generate symmetric key...');
+      // 対称鍵を生成します。
+      this.symmetricKey = await this.generateSymmetricKey();
+      // 対称鍵を公開鍵で暗号化します。
+      const wrappedSymmetricKeyBase64: string = await this.wrapSymmetricKey(
+        this.symmetricKey,
+        this.publicKey,
+      );
+      // 暗号化した対称鍵をバックエンドキャニスターに登録します。
+      const result: Result_1 = await this.actor.registerEncryptedSymmetricKey(
+                                  this.exportedPublicKeyBase64,
+                                  wrappedSymmetricKeyBase64,
+                                );
 
-    return true;
+      if ('Err' in result) {
+        if ('UnknownPublicKey' in result.Err) {
+          throw new Error('Unknown public key');
+        }
+        if ('AlreadyRegistered' in result.Err) {
+          throw new Error('Already registered');
+        }
+        if ('DeviceNotRegistered' in result.Err) {
+          throw new Error('Device not registered');
+        }
+      }
+
+      /** STEP10: 対称鍵を同期します。 */
+      console.log('Synchronizing symmetric keys...');
+      if (this.intervalId === null) {
+        this.intervalId = window.setInterval(
+          () => this.syncSymmetricKey(),
+          5000,
+        );
+      }
+
+      return true;
+    } else {
+      /** STEP11: 対称鍵を取得します。 */
+      console.log('Get symmetric key...');
+      const synced = await this.trySyncSymmetricKey();
+
+      return synced;
+    }
   }
 
   public async clearDeviceData(): Promise<void> {
@@ -77,7 +122,10 @@ export class CryptoService {
       this.intervalId = null;
     }
 
-    // ストレージからデバイスデータを削除します。
+    // idbに保存された公開鍵と秘密鍵を削除します。
+    await clearKeys();
+    // ブラウザのローカルストレージに保存されたデバイスエイリアスを削除します。
+    window.localStorage.removeItem('deviceAlias');
 
     // CryptoServiceクラスのメンバー変数を初期化します。
     this.publicKey = null;
@@ -108,13 +156,26 @@ export class CryptoService {
 
   public async trySyncSymmetricKey(): Promise<boolean> {
     /** 対称鍵が同期されているか確認します。 */
+    const syncedSymmetricKey: Result = await this.actor.getEncryptedSymmetricKey(this.exportedPublicKeyBase64);
 
-    const syncedSymmetricKey = { Err: 'dummy', };
     if ('Err' in syncedSymmetricKey) {
-      /** エラー処理を行います。 */
-      return false;
+      // エラー処理を行います。
+      if ('UnknownPublicKey' in syncedSymmetricKey.Err) {
+        throw new Error('Unknown public key');
+      }
+      if ('DeviceNotRegistered' in syncedSymmetricKey.Err) {
+        throw new Error('Device not registered');
+      }
+      if ('KeyNotSynchronized') {
+        console.log('Symmetric key is not synchronized');
+        return false;
+      }
     } else {
-      /** 暗号化された対称鍵を取得して復号します。 */
+      // 暗号化された対称鍵を取得して復号します。
+      this.symmetricKey = await this.unwrapSymmetricKey(
+        syncedSymmetricKey.Ok,
+        this.privateKey,
+      );
       return true;
     }
   }
@@ -176,7 +237,7 @@ export class CryptoService {
     }
 
     // 暗号化された対称鍵を持たない公開鍵一覧を取得します。
-    const unsyncedPublicKeys: string[] = [];
+    const unsyncedPublicKeys: string[] = await this.actor.getUnsyncedPublicKeys();
     const symmetricKey = this.symmetricKey;
     const encryptedKeys: Array<[string, string]> = [];
 
@@ -200,6 +261,16 @@ export class CryptoService {
       encryptedKeys.push([unsyncedPublicKey, wrappedSymmetricKeyBase64]);
     }
     // 公開鍵と暗号化された対称鍵のペアをアップロードします。
+    const result = await this.actor.uploadEncryptedSymmetricKeys(encryptedKeys);
+
+    if ('Err' in result) {
+      if ('UnknownPublicKey' in result.Err) {
+        throw new Error('Unknown public key');
+      }
+      if ('DeviceNotRegistered' in result.Err) {
+        throw new Error('Device not registered');
+      }
+    }
   }
 
   private async unwrapSymmetricKey(

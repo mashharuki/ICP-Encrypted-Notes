@@ -48,10 +48,32 @@ export const useAuthProvider = (): AuthState => {
 
     /** STEP7: デバイスデータの設定を行います。 */
     const initialized = await cryptoService.init();
-    console.log(`initialized: ${initialized}`);
-
-
-    setAuth({ actor, authClient, cryptoService, status: 'SYNCED' });
+    if (initialized) {
+      setAuth({ actor, authClient, cryptoService, status: 'SYNCED' });
+    } else {
+      setAuth({ status: 'SYNCHRONIZING' });
+      // 対称鍵が同期されるまで待機します。
+      while (true) {
+        // 1秒待機します。
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        try {
+          console.log('Waiting for key sync...');
+          const synced = await cryptoService.trySyncSymmetricKey();
+          if (synced) {
+            console.log('Key sync completed.');
+            setAuth({
+              actor,
+              authClient,
+              cryptoService,
+              status: 'SYNCED',
+            });
+            break;
+          }
+        } catch (err) {
+          throw new Error('Failed to synchronize symmetric key');
+        }
+      }
+    }
   };
 
   /**

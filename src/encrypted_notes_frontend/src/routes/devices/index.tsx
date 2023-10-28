@@ -6,6 +6,10 @@ import { DeleteItemDialog, DeviceCard, Layout } from '../../components';
 import { useDeviceCheck, useMessage } from '../../hooks';
 import { useAuthContext } from '../../hooks/authContext';
 
+/**
+ * Devics Component
+ * @returns 
+ */
 export const Devices = () => {
   const {
     isOpen: isOpenDeleteDialog,
@@ -35,7 +39,8 @@ export const Devices = () => {
     setIsLoading(true);
     try {
       // デバイスを削除します。
-      console.log('delete device');
+      await auth.actor.deleteDevice(deleteAlias);
+      await getDevices();
     } catch (err) {
       console.error(err);
       showMessage({
