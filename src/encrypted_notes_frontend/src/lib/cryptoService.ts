@@ -134,24 +134,76 @@ export class CryptoService {
     this.exportedPublicKeyBase64 = null;
   }
 
+  /**
+   * 復号するための関数
+   * @param data 
+   * @returns 
+   */
   public async decryptNote(data: string): Promise<string> {
     if (this.symmetricKey === null) {
       throw new Error('Not found symmetric key');
     }
 
-    /** 復号処理を実装します。 */
+    // テキストデータとIVを分離します。
+    const base64IvLength: number = (CryptoService.INIT_VECTOR_LENGTH / 3) * 4;
+    const decodedIv = data.slice(0, base64IvLength);
+    const decodedEncryptedNote = data.slice(base64IvLength);
 
-    return data;
+    // 一文字ずつ`charCodeAt()`で文字コードに変換します。
+    const encodedIv = this.base64ToArrayBuffer(decodedIv);
+    const encodedEncryptedNote = this.base64ToArrayBuffer(decodedEncryptedNote);
+
+    const decryptedNote: ArrayBuffer = await window.crypto.subtle.decrypt(
+      {
+        name: 'AES-GCM',
+        iv: encodedIv,
+      },
+      this.symmetricKey,
+      encodedEncryptedNote,
+    );
+
+    const decodedDecryptedNote: string = new TextDecoder().decode(
+      decryptedNote,
+    );
+
+    return decodedDecryptedNote;
   }
 
+  /**
+   * 暗号化する関数
+   * @param data 
+   * @returns 
+   */
   public async encryptNote(data: string): Promise<string> {
     if (this.symmetricKey === null) {
       throw new Error('Not found symmetric key');
     }
 
-    /** 暗号化処理を実装します。 */
+    // 12バイトのIV（初期化ベクター）を生成します。
+    const iv = window.crypto.getRandomValues(
+      new Uint8Array(CryptoService.INIT_VECTOR_LENGTH),
+    );
 
-    return data;
+    // ノートをUTF-8のバイト配列に変換します。
+    const encodedNote: Uint8Array = new TextEncoder().encode(data);
+    // 対称鍵を使ってノートを暗号化します。
+    const encryptedNote: ArrayBuffer = await window.crypto.subtle.encrypt(
+      // 使用するアルゴリズム
+      {
+        name: 'AES-GCM',
+        iv,
+      },
+      // 使用する鍵
+      this.symmetricKey,
+      // 暗号化するデータ
+      encodedNote,
+    );
+
+    // テキストデータとIVを結合します。
+    const decodedIv: string = this.arrayBufferToBase64(iv);
+    const decodedEncryptedNote: string = this.arrayBufferToBase64(encryptedNote);
+
+    return decodedIv + decodedEncryptedNote;
   }
 
   public async trySyncSymmetricKey(): Promise<boolean> {

@@ -72,8 +72,12 @@ export const Notes = () => {
     setIsLoading(true);
 
     try {
+      // ノートの暗号化を行います。
+      const encryptedNote = await auth.cryptoService.encryptNote(
+        currentNote.data,
+      );
       // バックエンドキャニスターにノートを追加します。
-      await auth.actor.addNote(currentNote.data);
+      await auth.actor.addNote(encryptedNote);
       await getNotes();
     } catch (err) {
       showMessage({
@@ -116,9 +120,18 @@ export const Notes = () => {
     }
 
     try {
+      const decryptedNotes = new Array<EncryptedNote>();
       // バックエンドキャニスターからノート一覧を取得します。
       const notes = await auth.actor.getNotes();
-      setNotes(notes);
+      // 暗号化されたノートを復号します。
+      for (const note of notes) {
+        const decryptedData = await auth.cryptoService.decryptNote(note.data);
+        decryptedNotes.push({
+          id: note.id,
+          data: decryptedData,
+        });
+      }
+      setNotes(decryptedNotes);
     } catch (err) {
       showMessage({
         title: 'Failed to get notes',
@@ -136,8 +149,16 @@ export const Notes = () => {
     setIsLoading(true);
 
     try {
+      // ノートの暗号化を行います。
+      const encryptedData = await auth.cryptoService.encryptNote(
+        currentNote.data,
+      );
+      const encryptedNote = {
+        id: currentNote.id,
+        data: encryptedData,
+      };
       // バックエンドキャニスターのノートを更新します。
-      await auth.actor.updateNote(currentNote);
+      await auth.actor.updateNote(encryptedNote);
       await getNotes();
     } catch (err) {
       showMessage({
